@@ -1,0 +1,52 @@
+name: 中证红利ETF监控
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC 时间，对应北京时间 09:00-11:55 / 13:00-15:55（交易日精确到秒由脚本内部过滤）
+    - cron: '*/5 1-3,5-7 * * 1-5'
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 用缓存跨运行保留去重状态：key 每次唯一，靠 restore-keys 前缀匹配恢复最新一条
+      - name: 恢复去重状态
+        uses: actions/cache/restore@v4
+        with:
+          path: monitor_state.json
+          key: monitor-state-${{ github.run_id }}
+          restore-keys: |
+            monitor-state-
+
+      - name: 安装依赖
+        run: pip install requests wechatpy
+
+      - name: 运行监控
+        env:
+          SYMBOL: "sh515080"
+          NAME: "中证红利ETF"
+          WINDOWS: "[20, 60]"
+          TOUCH_THRESHOLD: "0.01"
+          COOLDOWN_MINUTES: "120"
+          ROUND_STEP: "0.1"
+          FIELDS: '{"title":"title","index_name":"index_name","price":"price","signal":"signal","levels":"levels","advice":"advice","remark":"remark"}'
+          MONITOR_TZ: "Asia/Shanghai"
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          USER_ID: ${{ secrets.USER_ID }}
+          TEMPLATE_ID: ${{ secrets.TEMPLATE_ID }}
+        run: python monitor.py
+
+      # 每次运行保存一份新缓存（run_id 唯一）；旧条目由 GitHub 7 天自动过期回收
+      - name: 保存去重状态
+        uses: actions/cache/save@v4
+        with:
+          path: monitor_state.json
+          key: monitor-state-${{ github.run_id }}

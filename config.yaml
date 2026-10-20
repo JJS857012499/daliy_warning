@@ -1,0 +1,27 @@
+# 微信公众平台的 APP ID
+APP_ID: ""
+# 微信公众平台的 APP SECRET
+APP_SECRET: ""
+
+# 微信公众平台的 USER ID（接收行情提醒的用户，多个用 - 逐行列出）
+USER_ID:
+  - "user id1"
+
+# ============ 中证红利支撑/压力位监控 ============
+TRADE_ALERT:
+  SYMBOL: "sh515080"        # 中证红利ETF
+  NAME: "中证红利ETF"
+  TEMPLATE_ID: ""           # ⚠️ 需在公众号后台新建"行情提醒"模板后填入
+  WINDOWS: [20, 60]         # 高低点/均线窗口
+  TOUCH_THRESHOLD: 0.01     # 距支撑/压力 1% 内触发
+  CHECK_INTERVAL_MINUTES: 5 # 交易时段内检查频率
+  COOLDOWN_MINUTES: 120     # 同一信号重复提醒冷却时间
+  ROUND_STEP: 0.1           # 整数关口间隔（0=按价格自动；当前固定 0.1）
+  FIELDS:                   # 模板字段名，按公众号后台实际创建的模板填写
+    title: "title"
+    index_name: "index_name"  # 指数
+    price: "price"       # 当前点位
+    signal: "signal"      # 信号（加仓/减仓）
+    levels: "levels"      # 支撑/压力区间
+    advice: "advice"      # 操作建议
+    remark: "remark"
