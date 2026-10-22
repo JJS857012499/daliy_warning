@@ -65,11 +65,11 @@ def save_state(state):
         pass
 
 
-def fetch_kline(symbol, count):
-    """拉取日K线，返回 (dates, closes, highs, lows, current)。"""
+def fetch_kline(symbol, count, ktype="day"):
+    """拉取K线（ktype: day/week），返回 (dates, closes, highs, lows, volumes, current)。"""
     url = (
         "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
-        f"?param={symbol},day,,,{count},qfq"
+        f"?param={symbol},{ktype},,,{count},qfq"
     )
     res = requests.get(url, headers=HEADERS, timeout=15)
     res.raise_for_status()
@@ -79,7 +79,7 @@ def fetch_kline(symbol, count):
     node = payload["data"][symbol]
     rows = []
     if isinstance(node, dict):
-        for key in ("qfqday", "day", "hfqday"):
+        for key in ("qfq" + ktype, ktype, "hfq" + ktype):
             if key in node:
                 rows = node[key]
                 break
@@ -88,12 +88,13 @@ def fetch_kline(symbol, count):
     if not rows:
         raise RuntimeError("接口未返回K线数据")
     # 每行格式：[日期, 开盘, 收盘, 最高, 最低, 成交量]
-    dates, closes, highs, lows = [], [], [], []
+    dates, closes, highs, lows, volumes = [], [], [], [], []
     for r in rows:
         dates.append(r[0])
         closes.append(float(r[2]))
         highs.append(float(r[3]))
         lows.append(float(r[4]))
+        volumes.append(float(r[5]))
     # 当前价：优先取 qt 节点里的实时价（精确到 0.001），缺失时退回最后一根K线收盘价
     current = closes[-1]
     if isinstance(node, dict):
@@ -103,7 +104,7 @@ def fetch_kline(symbol, count):
                 current = float(qt[3])
             except (TypeError, ValueError):
                 pass
-    return dates, closes, highs, lows, current
+    return dates, closes, highs, lows, volumes, current
 
 
 def auto_round_step(price):
@@ -202,7 +203,7 @@ def send_wechat(wechat, data):
     print("推送信息 %s" % data)
     template_id = wechat["template_id"]
     if not template_id:
-        print("[提醒] 未配置 TRADE_ALERT.TEMPLATE_ID，跳过微信推送")
+        print("[提醒] 未配置 TEMPLATE_ID，跳过微信推送")
         return
     try:
         client = WeChatClient(wechat["app_id"], wechat["app_secret"])
@@ -221,7 +222,7 @@ def send_wechat(wechat, data):
 def evaluate(symbol, windows, threshold, round_step=0):
     """拉取数据并计算，返回结果 dict。"""
     count = max(windows) + 20
-    dates, closes, highs, lows, current = fetch_kline(symbol, count)
+    dates, closes, highs, lows, volumes, current = fetch_kline(symbol, count)
     # 用实时价修正最后一根K线收盘，保证均线/关口判断用的是同一现价
     closes[-1] = current
     current, support, resistance, supports, resistances = compute_levels(

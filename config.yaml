@@ -25,3 +25,19 @@ TRADE_ALERT:
     levels: "levels"      # 支撑/压力区间
     advice: "advice"      # 操作建议
     remark: "remark"
+
+# ============ 每日波段报告 ============
+REPORT:
+  TEMPLATE_ID: ""            # 波段报告模板ID（需在公众号后台新建后填入）
+  SEND_TIME: "15:40"         # 本地 timer 每日发送时间
+  FIELDS:                    # 按公众号后台实际创建的模板字段名填写
+    title: "title"
+    date: "date"
+    close: "close"
+    trend: "trend"
+    position: "position"
+    macd: "macd"
+    rsi: "rsi"
+    predict: "predict"
+    advice: "advice"
+    remark: "remark"

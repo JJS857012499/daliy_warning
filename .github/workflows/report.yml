@@ -1,0 +1,33 @@
+name: 中证红利ETF波段日报
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC 07:40 = 北京时间 15:40（收盘后）
+    - cron: '40 7 * * 1-5'
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install -r ./requirements.txt
+
+      - name: 生成并推送日报
+        env:
+          SYMBOL: "sh515080"
+          NAME: "中证红利ETF"
+          ROUND_STEP: "0.1"
+          MONITOR_TZ: "Asia/Shanghai"
+          REPORT_TEMPLATE_ID: ${{ secrets.REPORT_TEMPLATE_ID }}
+          REPORT_FIELDS: '{"title":"title","date":"date","close":"close","trend":"trend","position":"position","macd":"macd","rsi":"rsi","predict":"predict","advice":"advice","remark":"remark"}'
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          USER_ID: ${{ secrets.USER_ID }}
+        run: python report.py
