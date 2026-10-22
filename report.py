@@ -299,40 +299,35 @@ def build_report_data(fields, d):
     def f(key):
         return fields.get(key, key)
 
+    unit = d.get("unit", "日")
+    ma = d.get("ma") or {}
+    ma_names = "/".join(str(p) for p, _ in sorted(ma.items()))
+    ma_vals = "/".join(fmt(v) for _, v in sorted(ma.items()))
+    remark_parts = []
+    if ma_names:
+        remark_parts.append("均线MA%s %s" % (ma_names, ma_vals))
+    remark_parts.append("布林%s-%s" % (fmt(d.get("boll_low")), fmt(d.get("boll_up"))))
+    if d.get("remark"):
+        remark_parts.append(d["remark"])
+
     return {
-        f("title"): {"value": d["title"], "color": color},
-        f("date"): {"value": d["date"], "color": color},
-        f("close"): {"value": d["close_text"], "color": color},
-        f("trend"): {"value": d["trend"], "color": color},
-        f("position"): {"value": d["position_text"], "color": color},
-        f("macd"): {"value": d["macd_text"], "color": color},
-        f("rsi"): {"value": d["rsi_text"], "color": color},
-        f("predict"): {"value": d["direction"], "color": color},
-        f("advice"): {"value": d["advice"], "color": color},
-        f("remark"): {"value": d["remark"], "color": color},
+        f("title"): {"value": d.get("title", "--"), "color": color},
+        f("date"): {"value": d.get("date", "--"), "color": color},
+        f("close"): {"value": "%s 量比%s" % (d.get("close_text", "--"), fmt(d.get("vol_ratio"))), "color": color},
+        f("trend"): {"value": d.get("trend", "--"), "color": color},
+        f("position"): {"value": "60%s %s / 120%s %s" % (unit, fmtp(d.get("pos60")), unit, fmtp(d.get("pos120"))), "color": color},
+        f("macd"): {"value": "%s DIF%s/DEA%s" % (d.get("macd_text", "--"), fmt(d.get("dif")), fmt(d.get("dea"))), "color": color},
+        f("rsi"): {"value": "%s BIAS20 %s/60 %s" % (d.get("rsi_text", "--"), fmtp(d.get("bias20")), fmtp(d.get("bias60"))), "color": color},
+        f("predict"): {"value": "%s 评分%+.1f" % (d.get("direction", "--"), d.get("score", 0.0)), "color": color},
+        f("advice"): {"value": d.get("advice", "--"), "color": color},
+        f("remark"): {"value": "; ".join(remark_parts), "color": color},
     }
-
-
-def send_test(name, wechat):
-    data = build_report_data(wechat["fields"], {
-        "title": "%s 波段日报" % name,
-        "date": "测试",
-        "close_text": "0.000 (+0.00%)",
-        "trend": "测试",
-        "position_text": "测试",
-        "macd_text": "测试",
-        "rsi_text": "测试",
-        "direction": "测试",
-        "advice": "这是一条测试消息",
-        "remark": "测试",
-    })
-    send_wechat(wechat, data)
 
 
 def main():
     parser = argparse.ArgumentParser(description="中证红利ETF 波段报告")
     parser.add_argument('--once', action='store_true', help='跑一次并打印，不推送')
-    parser.add_argument('--test-send', action='store_true', help='发送一条测试微信消息')
+    parser.add_argument('--test-send', action='store_true', help='发送一条测试微信消息（真实数据）')
     parser.add_argument('--week', action='store_true', help='周线级别（每周五推送）')
     args = parser.parse_args()
 
@@ -347,10 +342,6 @@ def main():
         'fields': json.loads(os.getenv('REPORT_FIELDS', '{}')),
     }
 
-    if args.test_send:
-        send_test(name, wechat)
-        return
-
     if args.week:
         ktype, ma_periods, unit, title_word = "week", [5, 10, 20, 30, 60], "周", "波段周报"
     else:
@@ -361,6 +352,10 @@ def main():
     except Exception as e:
         print("数据获取失败: %s" % e)
         sys.exit(1)
+
+    if args.test_send:
+        send_wechat(wechat, build_report_data(wechat["fields"], d))
+        return
 
     if args.once:
         print_report(d)
