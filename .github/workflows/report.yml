@@ -26,7 +26,7 @@ jobs:
           ROUND_STEP: "0.1"
           MONITOR_TZ: "Asia/Shanghai"
           REPORT_TEMPLATE_ID: ${{ secrets.REPORT_TEMPLATE_ID }}
-          REPORT_FIELDS: '{"title":"title","date":"date","close":"close","trend":"trend","position":"position","macd":"macd","rsi":"rsi","predict":"predict","advice":"advice","remark":"remark"}'
+          REPORT_FIELDS: '{"title":"title","date":"date","close":"close","trend":"trend","position":"position","macd":"macd","rsi":"rsi","predict":"predict","advice":"advice","ma":"ma","boll":"boll","remark":"remark"}'
           APP_ID: ${{ secrets.APP_ID }}
           APP_SECRET: ${{ secrets.APP_SECRET }}
           USER_ID: ${{ secrets.USER_ID }}

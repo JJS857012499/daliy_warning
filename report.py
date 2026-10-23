@@ -301,26 +301,25 @@ def build_report_data(fields, d):
 
     unit = d.get("unit", "日")
     ma = d.get("ma") or {}
-    ma_names = "/".join(str(p) for p, _ in sorted(ma.items()))
-    ma_vals = "/".join(fmt(v) for _, v in sorted(ma.items()))
-    remark_parts = []
-    if ma_names:
-        remark_parts.append("均线MA%s %s" % (ma_names, ma_vals))
-    remark_parts.append("布林%s-%s" % (fmt(d.get("boll_low")), fmt(d.get("boll_up"))))
-    if d.get("remark"):
-        remark_parts.append(d["remark"])
+    keep = [5, 20, 60]
+    ma_names = "/".join(str(p) for p in keep if p in ma)
+    ma_vals = "/".join(fmt(ma[p]) for p in keep if p in ma)
+    ma_text = ("MA%s %s" % (ma_names, ma_vals)) if ma_names else "--"
+    boll_text = "上 %s / 中 %s / 下 %s" % (fmt(d["boll_up"]), fmt(d["boll_mid"]), fmt(d["boll_low"]))
 
     return {
         f("title"): {"value": d.get("title", "--"), "color": color},
         f("date"): {"value": d.get("date", "--"), "color": color},
-        f("close"): {"value": "%s 量比%s" % (d.get("close_text", "--"), fmt(d.get("vol_ratio"))), "color": color},
+        f("close"): {"value": "%s 量比 %s" % (d.get("close_text", "--"), fmt(d.get("vol_ratio"))), "color": color},
         f("trend"): {"value": d.get("trend", "--"), "color": color},
         f("position"): {"value": "60%s %s / 120%s %s" % (unit, fmtp(d.get("pos60")), unit, fmtp(d.get("pos120"))), "color": color},
-        f("macd"): {"value": "%s DIF%s/DEA%s" % (d.get("macd_text", "--"), fmt(d.get("dif")), fmt(d.get("dea"))), "color": color},
-        f("rsi"): {"value": "%s BIAS20 %s/60 %s" % (d.get("rsi_text", "--"), fmtp(d.get("bias20")), fmtp(d.get("bias60"))), "color": color},
+        f("macd"): {"value": "%s(DIF%s/DEA%s)" % (d.get("macd_text", "--"), fmt(d.get("dif")), fmt(d.get("dea"))), "color": color},
+        f("rsi"): {"value": "%s 乖离 BIAS20 %s/60 %s" % (d.get("rsi_text", "--"), fmtp(d.get("bias20")), fmtp(d.get("bias60"))), "color": color},
         f("predict"): {"value": "%s 评分%+.1f" % (d.get("direction", "--"), d.get("score", 0.0)), "color": color},
         f("advice"): {"value": d.get("advice", "--"), "color": color},
-        f("remark"): {"value": "; ".join(remark_parts), "color": color},
+        f("ma"): {"value": ma_text, "color": color},
+        f("boll"): {"value": boll_text, "color": color},
+        f("remark"): {"value": d.get("remark", "--"), "color": color},
     }
 
 

@@ -40,4 +40,6 @@ REPORT:
     rsi: "rsi"
     predict: "predict"
     advice: "advice"
+    ma: "ma"
+    boll: "boll"
     remark: "remark"
